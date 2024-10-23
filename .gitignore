@@ -1,4 +1,3 @@
-env
-.gitignore
-*.csv
+/env
+/csv
 /images

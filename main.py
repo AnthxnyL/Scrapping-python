@@ -3,13 +3,15 @@ import requests
 import csv
 import urllib.request
 import os, shutil
+import matplotlib.pyplot as plt
 
 def scrap_data_product(url_product): 
     url = url_product
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
+    category_name = soup.select('ul.breadcrumb > li')[2].text.replace('\n', "").replace(' ',"").lower()
 
-    with open('book.csv', 'a', newline='') as fichier_csv: 
+    with open(f'./csv/book_{category_name}.csv', 'a', newline='') as fichier_csv: 
         column_name=[
             "product_page_url",
             "universal_product_code",
@@ -23,6 +25,7 @@ def scrap_data_product(url_product):
             "image_url"
         ]
         writer = csv.DictWriter(fichier_csv, fieldnames=column_name)
+
         if fichier_csv.tell() == 0:
             writer.writeheader()
 
@@ -55,6 +58,7 @@ def scrap_data_product(url_product):
 
 
 
+
 def scrap_category(url_cate): 
     url_category = url_cate
     response = requests.get(url_category)
@@ -69,11 +73,10 @@ def scrap_category(url_cate):
     try:
         if None not in next_button:
             url = next_button.find('a').get('href')
-            url_pagination = f'https://books.toscrape.com/catalogue/category/books/fiction_10/{url}'
+            url_pagination = url_category.replace('index.html', '') + url
             scrap_category(url_pagination)
     except: 
         return ['n/a', 'n/a']
-
 
 def download_img(img_url, img_name, folder_name) :
     path = create_folder_category(folder_name)
@@ -94,10 +97,22 @@ def create_directory():
         shutil.rmtree("images")
     os.mkdir("images")
 
+    if os.path.isdir("csv"):
+        shutil.rmtree("csv")
+    os.mkdir("csv")
 
-url_cate = "https://books.toscrape.com/catalogue/category/books/fiction_10/"
+
+def scrap_website() : 
+    url_website = "https://books.toscrape.com/"
+    response = requests.get(url_website)
+    soup_website = BeautifulSoup(response.content, 'html.parser')
+
+    category_links = soup_website.select('ul.nav-list > li > ul >li > a')
+    for link in category_links : 
+        link_category = url_website + link.get('href')
+        scrap_category(link_category)
 
 create_directory()
-scrap_category(url_cate)
+scrap_website()
 
 
