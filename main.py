@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 import requests 
 import csv
-
+import urllib.request
+import os, shutil
 
 def scrap_data_product(url_product): 
     url = url_product
@@ -26,7 +27,6 @@ def scrap_data_product(url_product):
             writer.writeheader()
 
         table_data = soup.select('tr > td')
-
         book_upc = table_data[0].text
         book_price_exclude = table_data[2].text
         book_price_include = table_data[3].text
@@ -37,7 +37,6 @@ def scrap_data_product(url_product):
         book_description = soup.find_all('p')[3].text
         book_url = url 
         book_rating = soup.find(class_='star-rating').get('class')[1]
-        
 
         dict = {
             "product_page_url": book_url,
@@ -52,6 +51,7 @@ def scrap_data_product(url_product):
             "image_url": book_img
         }
         writer.writerow(dict)
+        download_img(book_url, book_title, book_category)
 
 
 
@@ -70,12 +70,34 @@ def scrap_category(url_cate):
         if None not in next_button:
             url = next_button.find('a').get('href')
             url_pagination = f'https://books.toscrape.com/catalogue/category/books/fiction_10/{url}'
-            print(url_pagination)
             scrap_category(url_pagination)
     except: 
         return ['n/a', 'n/a']
 
 
+def download_img(img_url, img_name, folder_name) :
+    path = create_folder_category(folder_name)
+    img = img_name.replace(' ', '-')
+    file_name = f"{path}/{img.lower()}.jpg"
+    urllib.request.urlretrieve(img_url, file_name)
+
+def create_folder_category(folder_name) : 
+    parent_dir = "./images"
+    directory =  folder_name.replace('\n', "").replace(' ',"")
+    path = os.path.join(parent_dir, directory)
+    if not os.path.exists(path) : 
+        os.mkdir(path)
+    return path
+
+def create_directory(): 
+    if os.path.isdir("images"):
+        shutil.rmtree("images")
+    os.mkdir("images")
+
 
 url_cate = "https://books.toscrape.com/catalogue/category/books/fiction_10/"
+
+create_directory()
 scrap_category(url_cate)
+
+
